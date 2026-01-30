@@ -48,6 +48,49 @@ public class SecurityValidator implements StaticAnalyzer {
             ));
         }
 
+        if (code.contains("MessageDigest.getInstance(\"MD5\")") || code.contains("MessageDigest.getInstance(\"SHA1\")")) {
+            issues.add(new Issue(
+                    IssueType.SECURITY,
+                    IssueSeverity.MEDIUM,
+                    "취약한 해시 알고리즘 사용이 감지되었습니다.",
+                    null,
+                    IssueSource.STATIC_ANALYZER
+            ));
+        }
+
+        if (code.contains("http://")) {
+            issues.add(new Issue(
+                    IssueType.SECURITY,
+                    IssueSeverity.LOW,
+                    "HTTP 사용은 평문 전송 위험이 있습니다.",
+                    null,
+                    IssueSource.STATIC_ANALYZER
+            ));
+        }
+
+        List<String> secretPatterns = List.of(
+                "password=\"",
+                "password = \"",
+                "apiKey=\"",
+                "apiKey = \"",
+                "secret=\"",
+                "secret = \"",
+                "token=\"",
+                "token = \""
+        );
+        for (String pattern : secretPatterns) {
+            if (code.contains(pattern)) {
+                issues.add(new Issue(
+                        IssueType.SECURITY,
+                        IssueSeverity.HIGH,
+                        "하드코딩된 시크릿이 의심됩니다.",
+                        null,
+                        IssueSource.STATIC_ANALYZER
+                ));
+                break;
+            }
+        }
+
         return issues;
     }
 }
