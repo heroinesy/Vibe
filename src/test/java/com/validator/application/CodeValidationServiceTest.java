@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,6 +37,7 @@ class CodeValidationServiceTest {
 
         assertThatThrownBy(() -> service.review(request))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("FORBIDDEN_PATTERN");
+                .satisfies(ex -> assertThat(((ValidationException) ex).getCode())
+                        .isEqualTo("FORBIDDEN_PATTERN"));
     }
 }
