@@ -28,6 +28,16 @@ public class QualityValidator implements StaticAnalyzer {
             ));
         }
 
+        if (code.contains("System.out.print")) {
+            issues.add(new Issue(
+                    IssueType.QUALITY,
+                    IssueSeverity.LOW,
+                    "System.out.print 사용은 로깅 프레임워크로 교체하세요.",
+                    null,
+                    IssueSource.STATIC_ANALYZER
+            ));
+        }
+
         if (code.contains("TODO")) {
             issues.add(new Issue(
                     IssueType.QUALITY,
@@ -43,6 +53,16 @@ public class QualityValidator implements StaticAnalyzer {
                     IssueType.QUALITY,
                     IssueSeverity.MEDIUM,
                     "예외 처리 시 로깅이나 상세 처리가 필요합니다.",
+                    null,
+                    IssueSource.STATIC_ANALYZER
+            ));
+        }
+
+        if (code.contains("printStackTrace()")) {
+            issues.add(new Issue(
+                    IssueType.QUALITY,
+                    IssueSeverity.MEDIUM,
+                    "printStackTrace 사용은 로그로 대체하세요.",
                     null,
                     IssueSource.STATIC_ANALYZER
             ));
