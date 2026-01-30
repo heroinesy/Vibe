@@ -54,11 +54,25 @@ public class AiAnalysisService {
 
     private String buildPrompt(CodeSubmission submission) {
         return """
-                다음 Java 코드를 보안/품질 관점에서 분석하고 JSON 배열로만 응답하세요.
-                스키마: [{"type":"SECURITY|QUALITY|SYNTAX|PERFORMANCE|OTHER","severity":"LOW|MEDIUM|HIGH|CRITICAL","message":"...","line":<number>}]
-                이슈가 없으면 [] 로만 응답하세요. 설명/마크다운은 금지입니다.
+                너는 코드 보안/품질 리뷰어다. 아래 코드를 분석하고 JSON 배열만 반환해라.
+                출력 규칙:
+                - 반드시 JSON 배열만 반환 (설명/마크다운/코드블록 금지)
+                - 스키마: [{"type":"SECURITY|QUALITY|SYNTAX|PERFORMANCE|OTHER","severity":"LOW|MEDIUM|HIGH|CRITICAL","message":"...","line":<number|null>}]
+                - line은 가능하면 숫자, 불가능하면 null
+                - 최대 8개 이슈까지만 반환
+                - 이슈가 없으면 [] 만 반환
+                - message는 한국어로 작성
+                입력 정보:
+                - filePath: %s
+                - language: %s
+                - context: %s
                 코드:
                 %s
-                """.formatted(submission.sourceCode());
+                """.formatted(
+                        submission.filePath() == null ? "" : submission.filePath(),
+                        submission.language() == null ? "" : submission.language(),
+                        submission.context() == null ? "" : submission.context(),
+                        submission.sourceCode()
+                );
     }
 }
