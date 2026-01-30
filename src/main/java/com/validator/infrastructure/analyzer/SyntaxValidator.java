@@ -33,6 +33,21 @@ public class SyntaxValidator implements StaticAnalyzer {
             ));
         }
 
+        int openParentheses = 0;
+        for (char c : code.toCharArray()) {
+            if (c == '(') openParentheses++;
+            if (c == ')') openParentheses--;
+        }
+        if (openParentheses != 0) {
+            issues.add(new Issue(
+                    IssueType.SYNTAX,
+                    IssueSeverity.MEDIUM,
+                    "괄호 개수가 일치하지 않습니다.",
+                    null,
+                    IssueSource.STATIC_ANALYZER
+            ));
+        }
+
         if (!code.contains("class ")) {
             issues.add(new Issue(
                     IssueType.SYNTAX,
