@@ -1,0 +1,28 @@
+{
+  "rules": [
+    {
+      "id": "SECURITY_CRITICAL_BLOCK",
+      "name": "Block critical security issues",
+      "type": "SECURITY",
+      "minSeverity": "CRITICAL",
+      "minCount": 1,
+      "action": "BLOCK"
+    },
+    {
+      "id": "HIGH_ISSUES_BLOCK",
+      "name": "Block too many high issues",
+      "type": "ANY",
+      "minSeverity": "HIGH",
+      "minCount": 3,
+      "action": "BLOCK"
+    },
+    {
+      "id": "MEDIUM_ISSUES_WARN",
+      "name": "Warn on many medium issues",
+      "type": "ANY",
+      "minSeverity": "MEDIUM",
+      "minCount": 5,
+      "action": "WARN"
+    }
+  ]
+}
