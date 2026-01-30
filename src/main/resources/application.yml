@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: vibe
+  main:
+    web-application-type: servlet
+
+server:
+  port: 8080
+
+ai:
+  openai:
+    enabled: false
+    base-url: https://api.openai.com
+    api-key: ${OPENAI_API_KEY:}
+    model: gpt-4o-mini
+    timeout-seconds: 20
