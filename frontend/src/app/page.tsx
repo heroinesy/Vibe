@@ -2,6 +2,28 @@
 
 import { useMemo, useState } from "react";
 
+type Issue = {
+  type: string;
+  severity: string;
+  message: string;
+  line?: number | null;
+  source?: string | null;
+};
+
+type ValidationResponse = {
+  decision?: {
+    status: string;
+    reason?: string | null;
+    triggeredRules?: string[] | null;
+  };
+  analysis?: {
+    issues?: Issue[] | null;
+    riskScore?: number | null;
+    hasBlockingIssues?: boolean | null;
+  };
+  suggestions?: string[] | null;
+};
+
 const defaultSource = `// 예시: 안전하지 않은 SQL 조합
 function buildQuery(userId: string) {
   return "SELECT * FROM users WHERE id = " + userId;
@@ -12,6 +34,7 @@ export default function Home() {
   const [filePath, setFilePath] = useState("src/service/user.ts");
   const [context, setContext] = useState("유저 조회 API 핸들러");
   const [language, setLanguage] = useState("TypeScript");
+  const [result, setResult] = useState<ValidationResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,6 +51,7 @@ export default function Home() {
 
     setIsSubmitting(true);
     setError(null);
+    setResult(null);
     const payload: Record<string, string> = {
       sourceCode,
     };
@@ -55,7 +79,8 @@ export default function Home() {
         throw new Error(message || "API 요청에 실패했습니다.");
       }
 
-      await response.json();
+      const data = (await response.json()) as ValidationResponse;
+      setResult(data);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.";
@@ -64,6 +89,9 @@ export default function Home() {
       setIsSubmitting(false);
     }
   };
+
+  const issues = result?.analysis?.issues ?? [];
+  const suggestions = result?.suggestions ?? [];
 
   return (
     <div className="min-h-screen bg-zinc-50 px-6 py-12 text-zinc-900">
@@ -149,19 +177,104 @@ export default function Home() {
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
                 결과 요약
               </p>
-              <p className="mt-3 text-sm text-zinc-500">
-                검증 요청 후 요약 정보가 표시됩니다.
-              </p>
+              {result ? (
+                <div className="mt-3 flex flex-col gap-3 text-sm text-zinc-700">
+                  <div className="flex items-center justify-between">
+                    <span>판단</span>
+                    <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-white">
+                      {result.decision?.status ?? "UNKNOWN"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>리스크 점수</span>
+                    <span className="font-semibold">
+                      {result.analysis?.riskScore ?? 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>차단 여부</span>
+                    <span>
+                      {result.analysis?.hasBlockingIssues ? "YES" : "NO"}
+                    </span>
+                  </div>
+                  {result.decision?.reason ? (
+                    <p className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs text-zinc-600">
+                      {result.decision.reason}
+                    </p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-zinc-500">
+                  결과가 아직 없습니다.
+                </p>
+              )}
             </div>
 
             <div className="rounded-xl border border-zinc-200 bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
-                상세 결과
+                트리거된 룰
               </p>
-              <p className="mt-3 text-sm text-zinc-500">
-                이슈 및 개선 제안이 이 영역에 표시됩니다.
-              </p>
+              {result?.decision?.triggeredRules?.length ? (
+                <ul className="mt-3 flex flex-col gap-2 text-sm text-zinc-700">
+                  {result.decision.triggeredRules.map((rule) => (
+                    <li key={rule} className="rounded-lg bg-zinc-50 px-3 py-2">
+                      {rule}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-zinc-500">
+                  적용된 룰이 없습니다.
+                </p>
+              )}
             </div>
+          </div>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold">발견된 이슈</h2>
+            {issues.length ? (
+              <ul className="mt-4 flex flex-col gap-3">
+                {issues.map((issue, index) => (
+                  <li
+                    key={`${issue.type}-${issue.message}-${index}`}
+                    className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm"
+                  >
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-500">
+                      <span className="rounded-full bg-zinc-900 px-2 py-1 text-white">
+                        {issue.severity}
+                      </span>
+                      <span>{issue.type}</span>
+                      {issue.line ? <span>Line {issue.line}</span> : null}
+                      {issue.source ? <span>{issue.source}</span> : null}
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-700">
+                      {issue.message}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-zinc-500">
+                이슈가 보고되지 않았습니다.
+              </p>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-semibold">개선 제안</h2>
+            {suggestions.length ? (
+              <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 text-sm text-zinc-700">
+                {suggestions.map((suggestion) => (
+                  <li key={suggestion}>{suggestion}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-4 text-sm text-zinc-500">
+                개선 제안이 아직 없습니다.
+              </p>
+            )}
           </div>
         </section>
       </main>
